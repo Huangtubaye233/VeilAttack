@@ -5,8 +5,10 @@ import argparse
 import json
 import os
 import logging
+import multiprocessing
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+import torch
 
 # Configure logging - set to ERROR level to only log errors
 logging.basicConfig(level=logging.ERROR)
@@ -158,6 +160,10 @@ def main():
     # Set VLLM configuration
     Config.set_vllm(args.use_vllm)
     
+    # 如果使用 VLLM，设置多进程启动方法为 'spawn'
+    if Config.USE_VLLM:
+        multiprocessing.set_start_method('spawn', force=True)
+    
     # Create output directories if they don't exist
     base_output_dir = args.output_dir
     pre_attack_dir = os.path.join(base_output_dir, "pre_attack")
@@ -200,6 +206,12 @@ def main():
         num_samples=args.limit
     )
     print(f"Decomposed queries saved to: {clean_file}")
+    
+    # 释放 attack model 的显存
+    print("\n=== Releasing attack model memory ===")
+    del attack_model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     # Step 4: Initialize victim model for attack
     print("\n=== Step 4: Initializing victim model for attack ===")
