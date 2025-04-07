@@ -60,19 +60,13 @@ class AttackModel:
             if model_dir:
                 os.makedirs(model_dir, exist_ok=True)
             
-            # Configure model loading options to avoid warnings
-            model_kwargs = {
-                "device_map": "auto",  # Let accelerate handle device mapping
-                "trust_remote_code": True,
+            # 配置模型加载选项
+            model_kwargs = Config.TRANSFORMERS_CONFIG.copy()
+            model_kwargs.update({
                 "cache_dir": model_dir,
                 "token": HF_TOKEN,
-            }
+            })
             
-            # Add specific configurations to avoid warnings
-            if "Qwen" in model_name:
-                # For Qwen models, disable sliding window attention
-                model_kwargs["use_flash_attention_2"] = False
-                
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 **model_kwargs
@@ -121,18 +115,22 @@ Your answer:
                 inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
                 
                 # 设置生成参数
-                generation_config = Config.PRE_ATTACK_GENERATION_CONFIG.copy()
+                generation_config = Config.TRANSFORMERS_PRE_ATTACK_GENERATION_CONFIG.copy()
                 generation_config.update({
                     "pad_token_id": self.tokenizer.pad_token_id,
                     "eos_token_id": self.tokenizer.eos_token_id,
                 })
                 
+                # 移除 VLLM 特定的参数
+                if "max_tokens" in generation_config:
+                    del generation_config["max_tokens"]
+                
                 outputs = self.model.generate(
                     inputs["input_ids"],
                     **generation_config,
-                    max_time=30.0,
                 )
                 response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            
             
             # Extract the last valid JSON from the response
             json_obj = self._extract_last_json(response)
@@ -143,6 +141,17 @@ Your answer:
                     return response, {"error": "Model returned example JSON"}
                 return response, json_obj
             else:
+                # 尝试从响应中提取 JSON 部分
+                try:
+                    # 查找第一个 { 和最后一个 }
+                    start = response.find('{')
+                    end = response.rfind('}') + 1
+                    if start != -1 and end != 0:
+                        json_str = response[start:end]
+                        json_obj = json.loads(json_str)
+                        return response, json_obj
+                except json.JSONDecodeError:
+                    pass
                 return response, {"error": "No valid JSON found in response"}
                 
         except Exception as e:
@@ -158,50 +167,63 @@ Your answer:
         Returns:
             Dict: The extracted JSON object or None if no valid JSON found
         """
-        # Find all JSON objects in the text
+        # 打印调试信息
+        print("\nDebug: Full response text:")
+        print(text)
+        
+        # 尝试直接解析整个文本
+        try:
+            json_obj = json.loads(text)
+            if isinstance(json_obj, dict):
+                print("\nDebug: Successfully parsed entire text as JSON")
+                return json_obj
+        except json.JSONDecodeError:
+            pass
+        
+        # 查找所有可能的 JSON 对象
         all_json_objects = []
         
-        # Scan the text for all potential JSON objects
+        # 扫描文本中的所有潜在 JSON 对象
         i = 0
         while i < len(text):
             if text[i] == '{':
-                # Found a potential start of JSON
+                # 找到潜在的 JSON 开始
                 start_idx = i
                 brace_count = 1
                 
-                # Find the matching closing brace
+                # 查找匹配的结束括号
                 for j in range(start_idx + 1, len(text)):
                     if text[j] == '{':
                         brace_count += 1
                     elif text[j] == '}':
                         brace_count -= 1
                         if brace_count == 0:
-                            # Found a complete JSON object
+                            # 找到完整的 JSON 对象
                             end_idx = j
                             json_str = text[start_idx:end_idx+1]
                             
                             try:
-                                # Try to parse it as JSON
+                                # 尝试解析为 JSON
                                 json_obj = json.loads(json_str)
-                                all_json_objects.append(json_obj)
-                            except json.JSONDecodeError:
-                                # Not a valid JSON, continue searching
-                                pass
+                                if isinstance(json_obj, dict):
+                                    all_json_objects.append(json_obj)
                             
-                            # Move i to after this JSON object
+                            # 移动到这个 JSON 对象之后
                             i = end_idx
                             break
                 
                 if brace_count > 0:
-                    # No matching closing brace found
+                    # 没有找到匹配的结束括号
                     break
             
             i += 1
         
-        # Return the last JSON object if any were found
+        # 返回最后一个 JSON 对象（如果找到）
         if all_json_objects:
+            print("\nDebug: Returning last found JSON object")
             return all_json_objects[-1]
         
+        print("\nDebug: No valid JSON objects found")
         return None
 
 # Hardcoded dataset name and subset
@@ -278,12 +300,6 @@ def process_queries(queries: List[str],
     clean_results = []
     
     for query_idx, query in enumerate(tqdm(queries, desc="Decomposing queries", leave=False)):
-        # Create debug record with full information
-        debug_record = {
-            "query_id": query_idx,
-            "original_query": query,
-            "timestamp": datetime.now().isoformat()
-        }
         
         # Get model response
         raw_response, json_response = model.decompose_query(query)

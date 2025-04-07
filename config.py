@@ -19,8 +19,8 @@ class Config:
     USE_VLLM = False  # 是否使用 VLLM
     VLLM_CONFIG = {
         "trust_remote_code": True,
-        "gpu_memory_utilization": 0.8,
-        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.8,  # 适中的内存使用率
+        "max_model_len": 1024,  # 适中的最大长度
         "enforce_eager": True,
         "quantization": None,
         "seed": 42,
@@ -28,25 +28,51 @@ class Config:
         "tensor_parallel_size": 1,
         "pipeline_parallel_size": 1,
         "disable_custom_all_reduce": True,
+        "max_num_seqs": 16,  # 适中的序列数
     }
     
-    # 生成参数配置
+    # 标准 Transformers 配置
+    TRANSFORMERS_CONFIG = {
+        "device_map": "auto",  # 让 accelerate 处理设备映射
+        "trust_remote_code": True,
+        "use_flash_attention_2": False,  # 对于 Qwen 模型禁用滑动窗口注意力
+    }
+    
+    # 基础生成参数配置 (VLLM)
     GENERATION_CONFIG = {
-        "temperature": 0.3,
+        "temperature": 0.5,  # 适中的温度
         "top_p": 0.9,
-        "max_new_tokens": 200,  # 改用 max_new_tokens 替代 max_tokens
-        "repetition_penalty": 1.2,
+        "max_tokens": 256,  # 适中的生成长度
+        "repetition_penalty": 1.1,
+        "top_k": 50,
+    }
+    
+    # 基础预攻击生成参数配置 (VLLM)
+    PRE_ATTACK_GENERATION_CONFIG = {
+        "temperature": 0.5,  # 适中的温度
+        "top_p": 0.9,
+        "max_tokens": 256,  # 适中的生成长度
+        "repetition_penalty": 1.1,
+        "top_k": 50,
+    }
+    
+    # 标准 Transformers 生成参数配置
+    TRANSFORMERS_GENERATION_CONFIG = {
+        "temperature": 0.5,  # 适中的温度
+        "top_p": 0.9,
+        "max_new_tokens": 256,  # 适中的生成长度
+        "repetition_penalty": 1.1,
         "top_k": 50,
         "pad_token_id": None,  # 将在运行时设置
         "eos_token_id": None,  # 将在运行时设置
     }
     
-    # 预攻击生成参数配置
-    PRE_ATTACK_GENERATION_CONFIG = {
-        "temperature": 0.3,
+    # 标准 Transformers 预攻击生成参数配置
+    TRANSFORMERS_PRE_ATTACK_GENERATION_CONFIG = {
+        "temperature": 0.5,  # 适中的温度
         "top_p": 0.9,
-        "max_new_tokens": 200,  # 改用 max_new_tokens 替代 max_tokens
-        "repetition_penalty": 1.2,
+        "max_new_tokens": 256,  # 适中的生成长度
+        "repetition_penalty": 1.1,
         "top_k": 50,
         "pad_token_id": None,  # 将在运行时设置
         "eos_token_id": None,  # 将在运行时设置
@@ -57,17 +83,3 @@ class Config:
         """设置是否使用 VLLM"""
         cls.USE_VLLM = use_vllm
     
-    @classmethod
-    def update_vllm_config(cls, **kwargs):
-        """更新 VLLM 配置"""
-        cls.VLLM_CONFIG.update(kwargs)
-    
-    @classmethod
-    def update_generation_config(cls, **kwargs):
-        """更新生成参数配置"""
-        cls.GENERATION_CONFIG.update(kwargs)
-    
-    @classmethod
-    def update_pre_attack_generation_config(cls, **kwargs):
-        """更新预攻击生成参数配置"""
-        cls.PRE_ATTACK_GENERATION_CONFIG.update(kwargs) 

@@ -61,19 +61,13 @@ class VictimModel:
             if model_dir:
                 os.makedirs(model_dir, exist_ok=True)
             
-            # Configure model loading options to avoid warnings
-            model_kwargs = {
-                "device_map": "auto",  # Let accelerate handle device mapping
-                "trust_remote_code": True,
+            # 配置模型加载选项
+            model_kwargs = Config.TRANSFORMERS_CONFIG.copy()
+            model_kwargs.update({
                 "cache_dir": model_dir,
                 "token": HF_TOKEN,
-            }
+            })
             
-            # Add specific configurations to avoid warnings
-            if "Qwen" in model_name:
-                # For Qwen models, disable sliding window attention
-                model_kwargs["use_flash_attention_2"] = False
-                
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 **model_kwargs
@@ -110,16 +104,19 @@ class VictimModel:
                 inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
                 
                 # 设置生成参数
-                generation_config = Config.GENERATION_CONFIG.copy()
+                generation_config = Config.TRANSFORMERS_GENERATION_CONFIG.copy()
                 generation_config.update({
                     "pad_token_id": self.tokenizer.pad_token_id,
                     "eos_token_id": self.tokenizer.eos_token_id,
                 })
                 
+                # 移除 VLLM 特定的参数
+                if "max_tokens" in generation_config:
+                    del generation_config["max_tokens"]
+                
                 outputs = self.model.generate(
                     inputs["input_ids"],
                     **generation_config,
-                    max_time=30.0,  # 30 second timeout
                     early_stopping=False  # Don't stop early to avoid truncated responses
                 )
                 full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
