@@ -1,0 +1,45 @@
+# 环境变量文件
+.env
+.env.*
+
+# 模型目录
+models/
+
+# 缓存目录
+cache/
+
+# Python 缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 输出目录
+output/
+
+# IDE 配置文件
+.vscode/
+.idea/
+
+# 日志文件
+*.log
+
+# Python 包信息
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# 环境文件
+.venv
+env/
+venv/
+ENV/
+
+# IDE 文件
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db 

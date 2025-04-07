@@ -1,64 +1,50 @@
 from setuptools import setup, find_packages
-import subprocess
 import sys
 import os
 
-def read_requirements(filename):
-    """Read requirements from file"""
-    with open(filename) as f:
+def read_requirements(filename='requirements.txt'):
+    """读取 requirements.txt 文件中的依赖"""
+    with open(filename, 'r', encoding='utf-8') as f:
         return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
-def create_conda_env():
-    """Create a new conda environment and install dependencies"""
-    env_name = "veil_attack"
-    
-    # Create conda environment
-    subprocess.run(["conda", "create", "-n", env_name, "python=3.9", "-y"])
-    
-    # Activate environment and install requirements
-    if sys.platform == "win32":
-        activate_cmd = f"conda activate {env_name} && "
-    else:
-        activate_cmd = f"source activate {env_name} && "
-    
-    # Install requirements
-    subprocess.run(activate_cmd + "pip install -r requirements.txt", shell=True)
-    
-    print(f"\nConda environment '{env_name}' created and dependencies installed.")
-    print(f"To activate the environment, run: conda activate {env_name}")
+def check_python_version():
+    """检查 Python 版本"""
+    if sys.version_info < (3, 10):
+        print("错误: 需要 Python 3.10 或更高版本（因为 vllm 依赖）")
+        print(f"当前 Python 版本: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+        sys.exit(1)
+    print(f"Python 版本 {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} 符合要求")
 
-def install_dependencies():
-    """Install dependencies in current environment"""
-    subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-    print("Dependencies installed successfully.")
+# 检查 Python 版本
+check_python_version()
 
-if __name__ == "__main__":
-    if "--conda" in sys.argv:
-        create_conda_env()
-    else:
-        install_dependencies()
+# 读取依赖
+pip_requirements = read_requirements()
 
-# Read requirements from requirements.txt
-requirements = read_requirements('requirements.txt')
-
+# 定义包信息
 setup(
     name="veil_attack",
-    version="0.1.0",
-    packages=find_packages(),
-    install_requires=requirements,
-    python_requires=">=3.9",
-    author="Your Name",
-    author_email="your.email@example.com",
+    version="0.2.0",
+    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    python_requires=">=3.10",
+    install_requires=pip_requirements,
+    author="Kefan",
+    author_email="kefan.xyz@gmail.com",
     description="A framework for studying LLM safety through query decomposition attacks",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding='utf-8').read() if os.path.exists("README.md") else "",
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/VeilAttack",
+    url="https://github.com/KF-Audio/VeilAttack",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Operating System :: POSIX :: Linux",
     ],
-) 
+)
+
+print("\nsetup.py 配置完成")
+print("请使用 ./setup.sh 创建 conda 环境并安装所有依赖") 
