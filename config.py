@@ -1,4 +1,3 @@
-import os
 from typing import Dict, Any
 
 class Config:
@@ -7,9 +6,9 @@ class Config:
     # 基础配置
     MODEL_DIR = "./models"  # 模型目录路径
     OUTPUT_DIR = "./output"  # 基础输出目录
-    PRE_ATTACK_DIR = os.path.join(OUTPUT_DIR, "pre_attack")  # 预攻击输出目录
-    ATTACK_DIR = os.path.join(OUTPUT_DIR, "attack")  # 攻击输出目录
-    FINAL_DIR = os.path.join(OUTPUT_DIR, "final")  # 最终输出目录
+    PRE_ATTACK_DIR = None  # 预攻击输出目录
+    ATTACK_DIR = None  # 攻击输出目录
+    FINAL_DIR = None  # 最终输出目录
     
     # 默认模型
     DEFAULT_ATTACK_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # 用于查询分解的模型
@@ -82,4 +81,13 @@ class Config:
     def set_vllm(cls, use_vllm: bool):
         """设置是否使用 VLLM"""
         cls.USE_VLLM = use_vllm
+        
+    @classmethod
+    def set_output_dir(cls, output_dir: str):
+        """设置输出目录"""
+        import os
+        cls.OUTPUT_DIR = output_dir
+        cls.PRE_ATTACK_DIR = os.path.join(output_dir, "pre_attack")
+        cls.ATTACK_DIR = os.path.join(output_dir, "attack")
+        cls.FINAL_DIR = os.path.join(output_dir, "final")
     

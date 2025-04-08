@@ -38,30 +38,19 @@ def save_query_response_pairs(attack_results_file: str, output_file: Optional[st
     try:
         # Load attack results
         with open(attack_results_file, 'r', encoding='utf-8') as f:
-            attack_results = json.load(f)
+            results = json.load(f)
         
         # Extract query-response pairs
         pairs = []
         
-        for result in attack_results:
-            query_idx = result.get("query_idx", -1)
-            sub_queries = result.get("sub_queries", {})
-            responses = result.get("responses", [])
-            
-            # Create a record for each query-response pair
-            for response_data in responses:
-                query_key = response_data.get("query_key", "")
-                query = response_data.get("query", "")
-                response = response_data.get("response", "")
-                
-                pair = {
-                    "query_idx": query_idx,
-                    "query_key": query_key,
-                    "query": query,
-                    "response": response
-                }
-                
-                pairs.append(pair)
+        for r in results:
+            for item in r.get("responses", []):
+                pairs.append({
+                    "query_idx": r.get("query_idx", -1),
+                    "query_key": item.get("query_key", ""),
+                    "query": item.get("query", ""),
+                    "response": item.get("response", "")
+                })
         
         # Save to output file
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -99,30 +88,27 @@ def custom_process_queries(queries: List[str],
         queries = queries[:num_samples]
     
     # Process records
-    clean_results = []
+    results = []
     
-    for query_idx, query in enumerate(queries):
+    for idx, q in enumerate(queries):
         # Get model response
-        raw_response, json_response = model.decompose_query(query)
+        raw, js = model.decompose_query(q)
         
         # Check for errors
-        if "error" in json_response:
-            logger.error(f"Error processing query {query_idx+1}: {json_response['error']}")
-        else:
-            # For clean output, directly use the JSON response
-            clean_results.append(json_response)
+        if "error" not in js:
+            results.append(js)
             
             # Print successful JSON responses
-            print(json.dumps(json_response, indent=2, ensure_ascii=False))
+            print(json.dumps(js, indent=2, ensure_ascii=False))
         
         # Periodically save to file
-        if (query_idx + 1) % 5 == 0:
+        if (idx + 1) % 5 == 0:
             with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(clean_results, f, ensure_ascii=False, indent=2)
+                json.dump(results, f, ensure_ascii=False, indent=2)
     
     # Final save
     with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(clean_results, f, ensure_ascii=False, indent=2)
+        json.dump(results, f, ensure_ascii=False, indent=2)
     
     return output_file
 
@@ -159,10 +145,7 @@ def main():
     
     # Set VLLM configuration
     Config.set_vllm(args.use_vllm)
-    
-    # 如果使用 VLLM，设置多进程启动方法为 'spawn'
-    if Config.USE_VLLM:
-        multiprocessing.set_start_method('spawn', force=True)
+    Config.set_output_dir(args.output_dir)
     
     # Create output directories if they don't exist
     base_output_dir = args.output_dir
@@ -222,18 +205,14 @@ def main():
     
     # Step 5: Load sub-queries from the decomposed queries file
     print("\n=== Step 5: Loading sub-queries for attack ===")
-    try:
-        with open(clean_file, 'r', encoding='utf-8') as f:
-            sub_queries_list = json.load(f)
-        print(f"Loaded {len(sub_queries_list)} sets of sub-queries")
-    except Exception as e:
-        logger.error(f"Error loading sub-queries: {str(e)}")
-        raise
+    with open(clean_file, 'r', encoding='utf-8') as f:
+        sub_queries_list = json.load(f)
+    print(f"Loaded {len(sub_queries_list)} sets of sub-queries")
     
     # Step 6: Attack victim model with sub-queries
     print("\n=== Step 6: Attacking victim model with sub-queries ===")
     attack_results_file = os.path.join(attack_dir, f"attack_results_{timestamp}.json")
-    attack_results_file = attack_with_sub_queries(
+    attack_with_sub_queries(
         victim_model=victim_model,
         sub_queries_list=sub_queries_list,
         output_file=attack_results_file
@@ -258,4 +237,7 @@ def main():
     return pairs_file
 
 if __name__ == "__main__":
+    # 如果使用 VLLM，设置多进程启动方法为 'spawn'
+    if Config.USE_VLLM:
+        multiprocessing.set_start_method("spawn", force=True)
     main()

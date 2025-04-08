@@ -22,8 +22,8 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_VISIBLE_DEVICES=0  # 使用第一个 GPU，根据需要修改
 
 # 设置默认参数
-ATTACK_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
-VICTIM_MODEL="Qwen/Qwen2.5-0.5B-Instruct"
+ATTACK_MODEL="Qwen/Qwen2.5-1.5B-Instruct"
+VICTIM_MODEL="Qwen/Qwen2.5-1.5B-Instruct"
 LIMIT=1
 OUTPUT_DIR="./output"
 USE_VLLM=false
@@ -73,12 +73,21 @@ echo "Python 版本:"
 python --version
 echo "当前工作目录:"
 pwd
-echo "检查 main.py 是否存在:"
-if [ -f "main.py" ]; then
-  echo "找到 main.py"
+echo "检查入口文件是否存在:"
+if [ "$USE_VLLM" = true ]; then
+    if [ -f "run_vllm.py" ]; then
+        echo "找到 run_vllm.py"
+    else
+        echo "错误: 未找到 run_vllm.py!"
+        exit 1
+    fi
 else
-  echo "错误: 未找到 main.py!"
-  exit 1
+    if [ -f "main.py" ]; then
+        echo "找到 main.py"
+    else
+        echo "错误: 未找到 main.py!"
+        exit 1
+    fi
 fi
 echo "========================================"
 
@@ -124,10 +133,11 @@ echo "查询限制: $LIMIT"
 echo "输出目录: $OUTPUT_DIR"
 if [ "$USE_VLLM" = true ]; then
   echo "使用 vllm 进行推理"
+  PYTHONPATH=$PYTHONPATH:$(pwd) python run_vllm.py $ARGS
+else
+  echo "使用 transformers 进行推理"
+  PYTHONPATH=$PYTHONPATH:$(pwd) python main.py $ARGS
 fi
-echo "----------------------------------------"
-
-python main.py $ARGS
 
 # 检查运行是否成功
 if [ $? -eq 0 ]; then
