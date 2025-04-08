@@ -20,6 +20,7 @@ print(f"New start method: {multiprocessing.get_start_method()}")
 
 print("\n=== Debug: Importing torch ===")
 import torch
+import torch.distributed as dist
 print(f"CUDA available: {torch.cuda.is_available()}")
 if torch.cuda.is_available():
     print(f"Current CUDA device: {torch.cuda.current_device()}")
@@ -171,6 +172,12 @@ def main():
 
     print("\n=== Attack pipeline completed successfully ===")
     print(f"All results saved to directory structure under: {args.output_dir}")
+
+    # 清理分布式训练资源
+    if dist.is_initialized():
+        print("\n=== Debug: Cleaning up distributed training resources ===")
+        dist.destroy_process_group()
+        print("Distributed process group destroyed")
 
 
 if __name__ == "__main__":

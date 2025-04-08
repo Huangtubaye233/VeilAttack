@@ -39,28 +39,28 @@ class Config:
     
     # 基础生成参数配置 (VLLM)
     GENERATION_CONFIG = {
-        "temperature": 0.5,  # 适中的温度
+        "temperature": 0.7,  # 适中的温度
         "top_p": 0.9,
         "max_tokens": 256,  # 适中的生成长度
-        "repetition_penalty": 1.1,
+        "repetition_penalty": 1.2,
         "top_k": 50,
     }
     
     # 基础预攻击生成参数配置 (VLLM)
     PRE_ATTACK_GENERATION_CONFIG = {
-        "temperature": 0.5,  # 适中的温度
+        "temperature": 0.7,  # 适中的温度
         "top_p": 0.9,
         "max_tokens": 256,  # 适中的生成长度
-        "repetition_penalty": 1.1,
+        "repetition_penalty": 1.2,
         "top_k": 50,
     }
     
     # 标准 Transformers 生成参数配置
     TRANSFORMERS_GENERATION_CONFIG = {
-        "temperature": 0.5,  # 适中的温度
+        "temperature": 0.7,  # 适中的温度
         "top_p": 0.9,
         "max_new_tokens": 256,  # 适中的生成长度
-        "repetition_penalty": 1.1,
+        "repetition_penalty": 1.2,
         "top_k": 50,
         "pad_token_id": None,  # 将在运行时设置
         "eos_token_id": None,  # 将在运行时设置
@@ -68,10 +68,10 @@ class Config:
     
     # 标准 Transformers 预攻击生成参数配置
     TRANSFORMERS_PRE_ATTACK_GENERATION_CONFIG = {
-        "temperature": 0.5,  # 适中的温度
+        "temperature": 0.7,  # 适中的温度
         "top_p": 0.9,
         "max_new_tokens": 256,  # 适中的生成长度
-        "repetition_penalty": 1.1,
+        "repetition_penalty": 1.2,
         "top_k": 50,
         "pad_token_id": None,  # 将在运行时设置
         "eos_token_id": None,  # 将在运行时设置
