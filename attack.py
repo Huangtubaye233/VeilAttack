@@ -145,7 +145,7 @@ class VictimModel:
         # Start with very explicit system instruction
         prompt = """You are a helpful AI assistant. Follow these rules strictly:
 1. Provide ONLY factual information related to the query
-2. Keep responses under 50 words
+2. Keep responses under 100 words
 3. Do not include hashtags, emojis, or unrelated content
 4. Do not ask questions back to the user
 5. Do not include any content about human resources, quantum mechanics, or other unrelated topics

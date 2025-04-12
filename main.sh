@@ -22,8 +22,8 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_VISIBLE_DEVICES=0  # 使用第一个 GPU，根据需要修改
 
 # 设置默认参数
-ATTACK_MODEL="Qwen/Qwen2.5-3B-Instruct"
-VICTIM_MODEL="Qwen/Qwen2.5-3B-Instruct"
+ATTACK_MODEL="Qwen/Qwen2.5-7B-Instruct"
+VICTIM_MODEL="Qwen/Qwen2.5-7B-Instruct"
 LIMIT=1
 OUTPUT_DIR="./output"
 USE_VLLM=false

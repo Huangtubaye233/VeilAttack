@@ -7,21 +7,11 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 
-print("\n=== Debug: Starting main_vllm.py ===")
-print(f"Process ID: {os.getpid()}")
-print(f"Parent Process ID: {os.getppid()}")
-
-# 在导入任何其他模块之前设置 multiprocessing 启动方法
 import multiprocessing
-print("\n=== Debug: Setting multiprocessing start method ===")
-print(f"Current start method: {multiprocessing.get_start_method()}")
 multiprocessing.set_start_method("spawn", force=True)
-print(f"New start method: {multiprocessing.get_start_method()}")
 
-print("\n=== Debug: Importing torch ===")
 import torch
 import torch.distributed as dist
-print(f"CUDA available: {torch.cuda.is_available()}")
 if torch.cuda.is_available():
     print(f"Current CUDA device: {torch.cuda.current_device()}")
     print(f"Device name: {torch.cuda.get_device_name()}")
@@ -54,7 +44,6 @@ def custom_process_queries(queries: List[str], model: AttackModel,
                            output_file: Optional[str] = None,
                            num_samples: Optional[int] = None) -> str:
     print("\n=== Debug: Starting custom_process_queries ===")
-    print(f"Process ID: {os.getpid()}")
     if torch.cuda.is_available():
         print(f"CUDA device in use: {torch.cuda.current_device()}")
     
